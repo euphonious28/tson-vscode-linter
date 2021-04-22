@@ -1,0 +1,41 @@
+{
+	"$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+	"name": "TSON",
+	"patterns": [
+		{
+			"include": "#comments"
+		},
+		{
+			"include": "#functions"
+		},
+		{
+			"include": "#strings"
+		}
+	],
+	"repository": {
+		"comments":{
+			"patterns": [{
+				"name": "comment.line.number-sign",
+				"match": "^\\s?#.*$"
+			}]
+		},
+		"functions": {
+			"patterns": [{
+				"name": "support.function.psltest",
+				"match": "\\b(ID|TITLE|DESCRIPTION|TEST|SETUP|SEND|VAR|VAR_REQUEST|VAR_RESPONSE|ASSERT)\\b"
+			}]
+		},
+		"strings": {
+			"name": "string.quoted.double.psltest",
+			"begin": "\"",
+			"end": "\"",
+			"patterns": [
+				{
+					"name": "constant.character.escape.psltest",
+					"match": "\\\\."
+				}
+			]
+		}
+	},
+	"scopeName": "source.tson"
+}
