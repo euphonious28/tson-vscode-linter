@@ -6,11 +6,8 @@ import { LanguageClient, LanguageClientOptions, ProtocolRequestType0, ServerOpti
 let client: LanguageClient
 
 // Launcher constants
-const launcherMain: string = 'com.tson.lsp.TSONLauncher';
-const launcherFilename: string = 'tson-lsp.jar'
-
-//const launcherMain: string = 'StdioLauncher';
-//const launcherFilename: string = 'launcher.jar'
+const launcherMain: string = 'com.tson.lsp.Launcher';
+const launcherFilename: string = 'tson-lsp-1.0-SNAPSHOT.jar'
 
 export function activate(context: vscode.ExtensionContext) {
     console.log('Initializing language server for language TSON')
@@ -27,8 +24,7 @@ export function activate(context: vscode.ExtensionContext) {
         let excecutable: string = path.join(JAVA_HOME, 'bin', 'java');
 
         // PSL Server launcher
-        //let classPath = path.join(__dirname, '..', '..', 'launcher', launcherFilename);
-        let classPath = 'E:\\Andre\\Personal Projects\\TSON\\lsp-lsp4j\\tson-lsp\\build\\libs\\tson-lsp-1.0-SNAPSHOT.jar'
+        let classPath = path.join(__dirname, '..', '..', 'launcher', launcherFilename);
         const args: string[] = ['-cp', classPath, launcherMain];
 
         // Server options
@@ -47,6 +43,7 @@ export function activate(context: vscode.ExtensionContext) {
         };
 
         // Create client
+        console.log("Creating new client using TSON from: " + classPath)
         client = new LanguageClient('tsonLS', 'Language Server for TSON', serverOptions, clientOptions)
 
         // Create the language client and start the client.
