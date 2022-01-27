@@ -40,16 +40,20 @@
                     "default": "verbose",
                     "description": "Traces the communication between VS Code and the language server."
                 },
-                "tson.path.lsp":{
+                "tson.path.lsp": {
                     "scope": "window",
                     "type": "string",
-                    "examples": ["E:/TSON/tson-lsp-1.0.0.jar"],
+                    "examples": [
+                        "E:/TSON/tson-lsp-1.0.0.jar"
+                    ],
                     "description": "Path to TSON-LSP jar file"
-                },                
-                "tson.path.library":{
+                },
+                "tson.path.library": {
                     "scope": "window",
                     "type": "string",
-                    "examples": ["E:/TSON/tson-1.0.0.jar"],
+                    "examples": [
+                        "E:/TSON/tson-1.0.0.jar"
+                    ],
                     "description": "Path to TSON jar file"
                 }
             }
