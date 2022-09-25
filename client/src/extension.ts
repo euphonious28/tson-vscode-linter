@@ -1,7 +1,7 @@
 import * as path from 'path';
 import * as vscode from 'vscode';
 
-import { LanguageClient, LanguageClientOptions, ProtocolRequestType0, ServerOptions } from 'vscode-languageclient/node';
+import { ClientCapabilities, DocumentSelector, DynamicFeature, FoldingRangeClientCapabilities, InitializeParams, LanguageClient, LanguageClientOptions, ProtocolRequestType0, SemanticTokens, SemanticTokensClientCapabilities, ServerCapabilities, ServerOptions, StaticFeature, WorkspaceClientCapabilities } from 'vscode-languageclient/node';
 
 let client: LanguageClient;
 
@@ -27,7 +27,7 @@ export function activate(context: vscode.ExtensionContext) {
         let excecutable: string = path.join(JAVA_HOME, 'bin', 'java');
 
         // LSP launcher path
-        const args: string[] = ['-cp', launcherPath, launcherMain];
+        const args: string[] = ['-cp', launcherPath, launcherMain, '-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005,debug-enabled=true'];
 
         // Server options
         // -- java execution path
@@ -63,6 +63,15 @@ export function activate(context: vscode.ExtensionContext) {
         // Create client
         console.log("Creating new client using TSON from: " + launcherPath);
         client = new LanguageClient('tsonLS', 'Language Server for TSON', serverOptions, clientOptions);
+
+        // Register client capabilities
+        client.registerFeature({
+            fillClientCapabilities(capabilities: ClientCapabilities): void {
+                capabilities.textDocument.semanticTokens.multilineTokenSupport = true;
+            },
+            initialize(): void { },
+            dispose(): void { }
+        });
 
         // Create the language client and start the client.
         let disposable = client.start();
