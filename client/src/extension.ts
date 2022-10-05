@@ -1,42 +1,61 @@
 import * as path from 'path';
 import * as vscode from 'vscode';
+import * as net from 'net';
+import * as child_process from 'child_process';
 
-import { LanguageClient, LanguageClientOptions, ProtocolRequestType0, ServerOptions } from 'vscode-languageclient/node';
+import { ClientCapabilities, DocumentSelector, DynamicFeature, FoldingRangeClientCapabilities, InitializeParams, LanguageClient, LanguageClientOptions, ProtocolRequestType0, SemanticTokens, SemanticTokensClientCapabilities, ServerCapabilities, ServerOptions, StaticFeature, StreamInfo, WorkspaceClientCapabilities } from 'vscode-languageclient/node';
 
 let client: LanguageClient;
 
 // Launcher constants
-const launcherMain: string = 'com.tson.lsp.Launcher';
-const launcherPath: string = vscode.workspace.getConfiguration('tson').get('path.lsp');
+const lspMainClass: string = 'com.tson.lsp.Launcher';
+const { JAVA_HOME } = process.env;
+const outputChannel: vscode.OutputChannel = vscode.window.createOutputChannel('TSON LSP')
 
 export function activate(context: vscode.ExtensionContext) {
-    console.log('Initializing language server for language TSON');
-
-    // Get the java home from the process environment.
-    const { JAVA_HOME } = process.env;
-    console.log('Using Java from JAVA_HOME: ' + JAVA_HOME);
-
-    // Log launcher path
-    console.log('Using TSON-LSP from: ' + launcherPath);
+    outputChannel.appendLine('Initializing language server for language TSON');
 
     // Only start if JAVA_HOME exists
     if (!JAVA_HOME) {
-        console.log('Initialization cancelled. JAVA_HOME not found.');
+        outputChannel.appendLine('Initialization cancelled. JAVA_HOME not found.');
     } else {
-        // Java execution path
-        let excecutable: string = path.join(JAVA_HOME, 'bin', 'java');
 
-        // LSP launcher path
-        const args: string[] = ['-cp', launcherPath, launcherMain];
+        // Server initialization promise
+        function createServer(): Promise<StreamInfo> {
+            return new Promise((resolve, reject) => {
+                // Create a new server
+                let server: net.Server = net.createServer((socket) => {
+                    outputChannel.appendLine('Creating server for LSP');
+                    resolve({
+                        reader: socket,
+                        writer: socket
+                    });
 
-        // Server options
-        // -- java execution path
-        // -- argument to be pass when executing the java command
-        let serverOptions: ServerOptions = {
-            command: excecutable,
-            args: [...args],
-            options: {}
-        };
+                    socket.on('end', () => outputChannel.appendLine('Server disconnected'));
+                }).on('error', (err) => {
+                    outputChannel.appendLine('Failed to start error. Details: ' + err);
+                });
+
+                // Grab a random port
+                server.listen(() => {
+                    // LSP args
+                    const args: string[] = [
+                        '-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005',
+                        '-cp', getTsonLsp(), lspMainClass,
+                        (server.address() as net.AddressInfo).port.toString()
+                    ];
+
+                    // Start LSP
+                    let process = child_process.spawn(getJavaExec(), args);
+                    process.stdout.on('data', data => {
+                        outputChannel.appendLine(data.toString());
+                    })
+                    process.stderr.on('data', data => {
+                        outputChannel.appendLine(data.toString());
+                    })
+                });
+            });
+        }
 
         // Client options
         let clientOptions: LanguageClientOptions = {
@@ -44,11 +63,11 @@ export function activate(context: vscode.ExtensionContext) {
             documentSelector: [{ scheme: 'file', language: 'tson' }],
             errorHandler: {
                 error: (error, message, count) => {
-                    console.log('Initialization error');
+                    outputChannel.appendLine('Initialization error');
                     return 2;
                 },
                 closed: () => {
-                    console.log('Closed');
+                    outputChannel.appendLine('Closed');
                     vscode.window.showErrorMessage(
                         "Failed to start TSON extension. Ensure that your settings are correct",
                         "View settings"
@@ -57,12 +76,27 @@ export function activate(context: vscode.ExtensionContext) {
                     })
                     return 1;
                 }
-            }
+            },
+            outputChannel: outputChannel,
+            traceOutputChannel: outputChannel
         };
 
-        // Create client
-        console.log("Creating new client using TSON from: " + launcherPath);
-        client = new LanguageClient('tsonLS', 'Language Server for TSON', serverOptions, clientOptions);
+        // Create Language Client
+        client = new LanguageClient('tsonLS', 'Language Server for TSON', createServer, clientOptions);
+
+        // Register client capabilities
+        client.registerFeature({
+            fillInitializeParams(params: InitializeParams): void {
+                params.trace = 'verbose';
+            },
+            fillClientCapabilities(capabilities: ClientCapabilities): void {
+                capabilities.textDocument.semanticTokens.multilineTokenSupport = true;
+            },
+            initialize(): void { },
+            dispose(): void { }
+        });
+
+        client.registerProposedFeatures();
 
         // Create the language client and start the client.
         let disposable = client.start();
@@ -73,5 +107,19 @@ export function activate(context: vscode.ExtensionContext) {
 }
 
 export function deactivate() {
-    console.log('Deactivated language server for language TSON');
+    outputChannel.appendLine('Deactivated language server for language TSON');
+}
+
+function getJavaExec(): string {
+    outputChannel.appendLine('Using Java from JAVA_HOME: ' + JAVA_HOME);
+
+    return path.join(JAVA_HOME, 'bin', 'java');
+}
+
+function getTsonLsp(): string {
+    // Log launcher path
+    const lspPath: string = vscode.workspace.getConfiguration('tson').get('path.lsp');
+    outputChannel.appendLine('Using TSON-LSP from: ' + lspPath);
+
+    return lspPath;
 }
