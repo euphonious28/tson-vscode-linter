@@ -2,7 +2,7 @@
     "name": "tson",
     "displayName": "TSON",
     "description": "Extension for using TSON. Provides syntax highlighting and auto completion",
-    "version": "1.2.0",
+    "version": "1.2.1",
     "repository": {"url": "https://github.com/euphonious28/tson-vscode-linter"},
     "engines": {
         "vscode": "^1.55.0"

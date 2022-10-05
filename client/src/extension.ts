@@ -40,7 +40,7 @@ export function activate(context: vscode.ExtensionContext) {
                 server.listen(() => {
                     // LSP args
                     const args: string[] = [
-                        '-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005',
+                        // '-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005',
                         '-cp', getTsonLsp(), lspMainClass,
                         (server.address() as net.AddressInfo).port.toString()
                     ];
